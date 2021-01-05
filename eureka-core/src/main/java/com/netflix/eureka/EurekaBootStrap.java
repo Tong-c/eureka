@@ -105,11 +105,13 @@ public class EurekaBootStrap implements ServletContextListener {
      *
      * @see javax.servlet.ServletContextListener#contextInitialized(javax.servlet.ServletContextEvent)
      */
+    // Eureka Server 启动入口方法
     @Override
-    public void contextInitialized(ServletContextEvent event) {// 启动初始化方法
+    public void contextInitialized(ServletContextEvent event) {
         try {
             // 初始化环境
             initEurekaEnvironment();
+            // 初始化上下文
             initEurekaServerContext();
 
             ServletContext sc = event.getServletContext();
@@ -125,7 +127,7 @@ public class EurekaBootStrap implements ServletContextListener {
      */
     protected void initEurekaEnvironment() throws Exception {
         logger.info("Setting the eureka configuration..");
-        // getConfigInstance() 方法包含双重检查加锁实现单例
+        // ConfigurationManager.getConfigInstance() 方法包含双重检查加锁实现单例
         String dataCenter = ConfigurationManager.getConfigInstance().getString(EUREKA_DATACENTER);
         if (dataCenter == null) {
             logger.info("Eureka data center value eureka.datacenter is not set, defaulting to default");
@@ -158,6 +160,7 @@ public class EurekaBootStrap implements ServletContextListener {
         ApplicationInfoManager applicationInfoManager = null;
 
         if (eurekaClient == null) {
+
             // 读取 eurkea-client.properties 文件，并加载信息到 EurkeaInstanceConfig 属性 DynamicPropertyFactory 中
             EurekaInstanceConfig instanceConfig = isCloud(ConfigurationManager.getDeploymentContext())
                     ? new CloudInstanceConfig()
@@ -169,7 +172,7 @@ public class EurekaBootStrap implements ServletContextListener {
             // 读取 eurkea-client.properties 文件，并加载信息到 EurkeaInstanceConfig 属性 DynamicPropertyFactory 中
             EurekaClientConfig eurekaClientConfig = new DefaultEurekaClientConfig();
 
-            // 构建 DiscoveryClient 对象，目前虽然并不十分明确，但觉关键
+            //  Eureka Server 本身作为 Eureka Client，构建 DiscoveryClient 对象，构建过程之中，实现服务注册，目前虽然并不十分明确，但觉关键
             eurekaClient = new DiscoveryClient(applicationInfoManager, eurekaClientConfig);
         } else {
             applicationInfoManager = eurekaClient.getApplicationInfoManager();
