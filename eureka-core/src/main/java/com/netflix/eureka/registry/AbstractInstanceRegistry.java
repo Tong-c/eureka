@@ -269,7 +269,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             registrant.setActionType(ActionType.ADDED);
             recentlyChangedQueue.add(new RecentlyChangedItem(lease));
             registrant.setLastUpdatedTimestamp();
-            invalidateCache(registrant.getAppName(), registrant.getVIPAddress(), registrant.getSecureVipAddress());
+            invalidateCache(registrant.getAppName(), registrant.getVIPAddress(), registrant.getSecureVipAddress());// 主动过期，当有新的服务注册后，会主动过期注册表缓存
             logger.info("Registered instance {}/{} with status {} (replication={})",
                     registrant.getAppName(), registrant.getId(), registrant.getStatus(), isReplication);
         } finally {
@@ -308,9 +308,9 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             Map<String, Lease<InstanceInfo>> gMap = registry.get(appName);
             Lease<InstanceInfo> leaseToCancel = null;
             if (gMap != null) {
-                leaseToCancel = gMap.remove(id);
+                leaseToCancel = gMap.remove(id);// 根据服务实例名称以及服务实例 id，移除服务实例
             }
-            synchronized (recentCanceledQueue) {
+            synchronized (recentCanceledQueue) {// 将取消注册的服务信息加入 recentCancledQueue 队列
                 recentCanceledQueue.add(new Pair<Long, String>(System.currentTimeMillis(), appName + "(" + id + ")"));
             }
             InstanceStatus instanceStatus = overriddenInstanceStatusMap.remove(id);
@@ -328,12 +328,12 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
                 String svip = null;
                 if (instanceInfo != null) {
                     instanceInfo.setActionType(ActionType.DELETED);
-                    recentlyChangedQueue.add(new RecentlyChangedItem(leaseToCancel));
-                    instanceInfo.setLastUpdatedTimestamp();
+                    recentlyChangedQueue.add(new RecentlyChangedItem(leaseToCancel));// 将取消注册的服务信息加入到 recentlyChangedQueue 队列中，此队列中的信息会在 eureka client 增量更新的时候同步到各个客户都
+                    instanceInfo.setLastUpdatedTimestamp();// 更新服务实例上次更新时间
                     vip = instanceInfo.getVIPAddress();
                     svip = instanceInfo.getSecureVipAddress();
                 }
-                invalidateCache(appName, vip, svip);
+                invalidateCache(appName, vip, svip);// 过期缓存
                 logger.info("Cancelled instance {}/{} (replication={})", appName, id, isReplication);
                 return true;
             }
@@ -348,9 +348,10 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
      *
      * @see com.netflix.eureka.lease.LeaseManager#renew(java.lang.String, java.lang.String, boolean)
      */
+    // eureka server 处理心跳的逻辑
     public boolean renew(String appName, String id, boolean isReplication) {
         RENEW.increment(isReplication);
-        Map<String, Lease<InstanceInfo>> gMap = registry.get(appName);
+        Map<String, Lease<InstanceInfo>> gMap = registry.get(appName);// 根据服务名称，从注册表查询服务信息
         Lease<InstanceInfo> leaseToRenew = null;
         if (gMap != null) {
             leaseToRenew = gMap.get(id);
@@ -384,7 +385,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
                 }
             }
             renewsLastMin.increment();
-            leaseToRenew.renew();
+            leaseToRenew.renew();// 关键方法调用
             return true;
         }
     }
@@ -744,7 +745,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
         }
         Applications apps = new Applications();
         apps.setVersion(1L);
-        for (Entry<String, Map<String, Lease<InstanceInfo>>> entry : registry.entrySet()) {
+        for (Entry<String, Map<String, Lease<InstanceInfo>>> entry : registry.entrySet()) {// 循环注册表，并加载信息到 Applications 中去
             Application app = null;
 
             if (entry.getValue() != null) {
@@ -955,7 +956,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
         Map<String, Application> applicationInstancesMap = new HashMap<String, Application>();
         try {
             write.lock();
-            Iterator<RecentlyChangedItem> iter = this.recentlyChangedQueue.iterator();
+            Iterator<RecentlyChangedItem> iter = this.recentlyChangedQueue.iterator();// 最近变动的队列
             logger.debug("The number of elements in the delta queue is :" + this.recentlyChangedQueue.size());
             while (iter.hasNext()) {
                 Lease<InstanceInfo> lease = iter.next().getLeaseInfo();

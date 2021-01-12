@@ -59,7 +59,7 @@ public class Lease<T> {
      * associated {@link T} during registration, otherwise default duration is
      * {@link #DEFAULT_DURATION_IN_SECS}.
      */
-    public void renew() {
+    public void renew() {// eureka server 接收心跳请求后，会更新上次更新时间
         lastUpdateTimestamp = System.currentTimeMillis() + duration;
 
     }
@@ -68,7 +68,7 @@ public class Lease<T> {
      * Cancels the lease by updating the eviction time.
      */
     public void cancel() {
-        if (evictionTimestamp <= 0) {
+        if (evictionTimestamp <= 0) {// eureka server 接收取消服务注册请求后，更新失效时间
             evictionTimestamp = System.currentTimeMillis();
         }
     }

@@ -204,6 +204,12 @@ public abstract class AbstractJersey2EurekaHttpClient implements EurekaHttpClien
         }
     }
 
+    /**
+     * 熟悉的地方，这个类是发送 rest 调用的地方，而这里呢，是发送的抓取全量注册表的请求
+     *
+     * @param regions
+     * @return
+     */
     @Override
     public EurekaHttpResponse<Applications> getApplications(String... regions) {
         return getApplicationsInternal("apps/", regions);

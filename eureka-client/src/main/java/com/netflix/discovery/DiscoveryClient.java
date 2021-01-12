@@ -411,8 +411,8 @@ public class DiscoveryClient implements EurekaClient {
             throw new RuntimeException("Failed to initialize DiscoveryClient!", e);
         }
 
-        // shouldFetchRegistry 以及 fetchRegistry 都属于 eurkea.client.properties 的属性，配置文件会加载到 EureClientConfig 对象中
-        if (clientConfig.shouldFetchRegistry() && !fetchRegistry(false)) {
+        // shouldFetchRegistry 属于 eurkea.client.properties 的属性，配置文件会加载到 EureClientConfig 对象中
+        if (clientConfig.shouldFetchRegistry() && !fetchRegistry(false)) {// 这里有个方法被忽略了，原来以为也是读取下配置完事，其实不是，这里是直接抓取注册表
             fetchRegistryFromBackup();
         }
 
@@ -818,7 +818,7 @@ public class DiscoveryClient implements EurekaClient {
     boolean renew() {
         EurekaHttpResponse<InstanceInfo> httpResponse;
         try {
-            // 发送心跳
+            // 发送心跳请求
             httpResponse = eurekaTransport.registrationClient.sendHeartBeat(instanceInfo.getAppName(), instanceInfo.getId(), instanceInfo, null);
             logger.debug("{} - Heartbeat status: {}", PREFIX + appPathIdentifier, httpResponse.getStatusCode());
             if (httpResponse.getStatusCode() == 404) {
@@ -858,20 +858,20 @@ public class DiscoveryClient implements EurekaClient {
      */
     @PreDestroy
     @Override
-    public synchronized void shutdown() {
+    public synchronized void shutdown() {// 关闭 Eureka Client
         if (isShutdown.compareAndSet(false, true)) {
             logger.info("Shutting down DiscoveryClient ...");
 
             if (statusChangeListener != null && applicationInfoManager != null) {
                 applicationInfoManager.unregisterStatusChangeListener(statusChangeListener.getId());
             }
-
+            // 关闭调度任务
             cancelScheduledTasks();
 
             // If APPINFO was registered
             if (applicationInfoManager != null && clientConfig.shouldRegisterWithEureka()) {
                 applicationInfoManager.setInstanceStatus(InstanceStatus.DOWN);
-                unregister();
+                unregister();// 取消服务注册
             }
 
             if (eurekaTransport != null) {
@@ -888,7 +888,7 @@ public class DiscoveryClient implements EurekaClient {
     /**
      * unregister w/ the eureka service.
      */
-    void unregister() {
+    void unregister() {// 发送请求到 eureka server，下线服务
         // It can be null if shouldRegisterWithEureka == false
         if (eurekaTransport != null && eurekaTransport.registrationClient != null) {
             try {
@@ -934,9 +934,9 @@ public class DiscoveryClient implements EurekaClient {
                 logger.info("Registered Applications size is zero : {}",
                         (applications.getRegisteredApplications().size() == 0));
                 logger.info("Application version is -1: {}", (applications.getVersion() == -1));
-                getAndStoreFullRegistry();
+                getAndStoreFullRegistry();// 抓取全量注册表
             } else {
-                getAndUpdateDelta(applications);
+                getAndUpdateDelta(applications);// 抓取增量注册表
             }
             applications.setAppsHashCode(applications.getReconcileHashCode());
             logTotalInstances();
@@ -1255,7 +1255,7 @@ public class DiscoveryClient implements EurekaClient {
                             "heartbeat",
                             scheduler,
                             heartbeatExecutor,
-                            renewalIntervalInSecs,
+                            renewalIntervalInSecs,// 当前取值 30s，也就是说每 30 s 发送一次心跳请求
                             TimeUnit.SECONDS,
                             expBackOffBound,
                             new HeartbeatThread()
@@ -1378,6 +1378,7 @@ public class DiscoveryClient implements EurekaClient {
     /**
      * The heartbeat task that renews the lease in the given intervals.
      */
+    // eureka client 定时心跳的任务
     private class HeartbeatThread implements Runnable {
 
         public void run() {

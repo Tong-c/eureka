@@ -36,10 +36,9 @@ import com.netflix.discovery.EurekaClientConfig;
 
 /**
  * Sample Eureka client that discovers the example service using Eureka and sends requests.
- *
+ * <p>
  * In this example, the program tries to get the example from the EurekaClient, and then
  * makes a REST call to a supported service endpoint
- *
  */
 public class ExampleEurekaClient {
 
@@ -57,6 +56,7 @@ public class ExampleEurekaClient {
 
     private static synchronized EurekaClient initializeEurekaClient(ApplicationInfoManager applicationInfoManager, EurekaClientConfig clientConfig) {
         if (eurekaClient == null) {
+            // 非常熟悉的一行代码，Eureka Server 启动的时候同样会构造 DiscoveryClient 对象
             eurekaClient = new DiscoveryClient(applicationInfoManager, clientConfig);
         }
 
@@ -114,10 +114,15 @@ public class ExampleEurekaClient {
         }
     }
 
+    /**
+     * 完美的观察 Eureka Client 启动的入口，同时也是 Eureka Client 关闭的入口
+     *
+     * @param args
+     */
     public static void main(String[] args) {
         ExampleEurekaClient sampleClient = new ExampleEurekaClient();
 
-        // create the client
+        // create the client，启动
         ApplicationInfoManager applicationInfoManager = initializeApplicationInfoManager(new MyDataCenterInstanceConfig());
         EurekaClient client = initializeEurekaClient(applicationInfoManager, new DefaultEurekaClientConfig());
 
@@ -125,7 +130,7 @@ public class ExampleEurekaClient {
         sampleClient.sendRequestToServiceUsingEureka(client);
 
 
-        // shutdown the client
+        // shutdown the client，关闭
         eurekaClient.shutdown();
     }
 

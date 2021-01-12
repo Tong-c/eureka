@@ -66,7 +66,7 @@ import org.slf4j.LoggerFactory;
  * categories of requests - all applications, delta changes and for individual
  * applications. The compressed form is probably the most efficient in terms of
  * network traffic especially when querying all applications.
- *
+ * <p>
  * The cache also maintains separate pay load for <em>JSON</em> and <em>XML</em>
  * formats and for multiple versions too.
  * </p>
@@ -112,9 +112,9 @@ public class ResponseCacheImpl implements ResponseCache {
                 }
             });
 
-    private final ConcurrentMap<Key, Value> readOnlyCacheMap = new ConcurrentHashMap<Key, Value>();
+    private final ConcurrentMap<Key, Value> readOnlyCacheMap = new ConcurrentHashMap<Key, Value>();// concurrentMap
 
-    private final LoadingCache<Key, Value> readWriteCacheMap;
+    private final LoadingCache<Key, Value> readWriteCacheMap;// guava cache
     private final boolean shouldUseReadOnlyResponseCache;
     private final AbstractInstanceRegistry registry;
     private final EurekaServerConfig serverConfig;
@@ -129,7 +129,7 @@ public class ResponseCacheImpl implements ResponseCache {
         long responseCacheUpdateIntervalMs = serverConfig.getResponseCacheUpdateIntervalMs();
         this.readWriteCacheMap =
                 CacheBuilder.newBuilder().initialCapacity(1000)
-                        .expireAfterWrite(serverConfig.getResponseCacheAutoExpirationInSeconds(), TimeUnit.SECONDS)
+                        .expireAfterWrite(serverConfig.getResponseCacheAutoExpirationInSeconds(), TimeUnit.SECONDS)// 定时过期
                         .removalListener(new RemovalListener<Key, Value>() {
                             @Override
                             public void onRemoval(RemovalNotification<Key, Value> notification) {
@@ -220,11 +220,10 @@ public class ResponseCacheImpl implements ResponseCache {
     /**
      * Get the compressed information about the applications.
      *
-     * @param key
-     *            the key for which the compressed cached information needs to
+     * @param key the key for which the compressed cached information needs to
      *            be obtained.
      * @return compressed payload which contains information about the
-     *         applications.
+     * applications.
      */
     public byte[] getGZIP(Key key) {
         Value payload = getValue(key, shouldUseReadOnlyResponseCache);
@@ -304,11 +303,10 @@ public class ResponseCacheImpl implements ResponseCache {
     }
 
     /**
-     * @deprecated use instance method {@link #getVersionDelta()}
-     *
-     * Gets the version number of the cached data.
-     *
      * @return teh version number of the cached data.
+     * @deprecated use instance method {@link #getVersionDelta()}
+     * <p>
+     * Gets the version number of the cached data.
      */
     @Deprecated
     public static AtomicLong getVersionDeltaStatic() {
@@ -316,11 +314,10 @@ public class ResponseCacheImpl implements ResponseCache {
     }
 
     /**
-     * @deprecated use instance method {@link #getVersionDeltaWithRegions()}
-     *
-     * Gets the version number of the cached data with remote regions.
-     *
      * @return teh version number of the cached data with remote regions.
+     * @deprecated use instance method {@link #getVersionDeltaWithRegions()}
+     * <p>
+     * Gets the version number of the cached data with remote regions.
      */
     @Deprecated
     public static AtomicLong getVersionDeltaWithRegionsLegacy() {
@@ -341,15 +338,15 @@ public class ResponseCacheImpl implements ResponseCache {
      * Get the payload in both compressed and uncompressed form.
      */
     @VisibleForTesting
-    Value getValue(final Key key, boolean useReadOnlyCache) {
+    Value getValue(final Key key, boolean useReadOnlyCache) {// 这里头有两个 cache 对象，readOnlyCacheMap 和 readWriteCacheMap
         Value payload = null;
         try {
             if (useReadOnlyCache) {
-                final Value currentPayload = readOnlyCacheMap.get(key);
+                final Value currentPayload = readOnlyCacheMap.get(key);// 先从 readOnlyCacheMap 缓存中读取
                 if (currentPayload != null) {
                     payload = currentPayload;
                 } else {
-                    payload = readWriteCacheMap.get(key);
+                    payload = readWriteCacheMap.get(key);// readOnlyCacheMap 缓存为空时，继续到 readWriteCacheMap 缓存中读取，在这里如果 readWriteCacheMap 缓存为空，不会直接去注册表中重新抓取信息放入缓存，缓存实例初始化的时候会将注册表信息放入缓存中，不在这里维护
                     readOnlyCacheMap.put(key, payload);
                 }
             } else {
@@ -373,7 +370,7 @@ public class ResponseCacheImpl implements ResponseCache {
             logger.error("Failed to encode the payload for all apps", e);
             return "";
         }
-        if(logger.isDebugEnabled()) {
+        if (logger.isDebugEnabled()) {
             logger.debug("New application cache entry {} with apps hashcode {}", key.toStringCompact(), apps.getAppsHashCode());
         }
         return result;
@@ -495,7 +492,6 @@ public class ResponseCacheImpl implements ResponseCache {
 
     /**
      * The class that stores payload in both compressed and uncompressed form.
-     *
      */
     public class Value {
         private final String payload;
