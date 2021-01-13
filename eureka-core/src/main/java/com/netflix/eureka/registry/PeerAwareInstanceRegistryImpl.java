@@ -234,9 +234,9 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
     @Override
     public void openForTraffic(ApplicationInfoManager applicationInfoManager, int count) {
         // Renewals happen every 30 seconds and for a minute it should be a factor of 2.
-        this.expectedNumberOfRenewsPerMin = count * 2;
+        this.expectedNumberOfRenewsPerMin = count * 2;// 期待的每分钟心跳数量
         this.numberOfRenewsPerMinThreshold =
-                (int) (this.expectedNumberOfRenewsPerMin * serverConfig.getRenewalPercentThreshold());
+                (int) (this.expectedNumberOfRenewsPerMin * serverConfig.getRenewalPercentThreshold());// RenewalPercentThreshold 默认 0.85，通过期待的心跳数量 * 0.85 计算出每分钟心跳数的阈值
         logger.info("Got " + count + " instances from neighboring DS node");
         logger.info("Renew threshold is: " + numberOfRenewsPerMinThreshold);
         this.startupTime = System.currentTimeMillis();
@@ -473,11 +473,11 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
 
     @Override
     public boolean isLeaseExpirationEnabled() {
-        if (!isSelfPreservationModeEnabled()) {
+        if (!isSelfPreservationModeEnabled()) {// 如果 eureka server 自我保护机制没有开启，那么 eureka server 就会主动移除服务
             // The self preservation mode is disabled, hence allowing the instances to expire.
             return true;
         }
-        return numberOfRenewsPerMinThreshold > 0 && getNumOfRenewsInLastMin() > numberOfRenewsPerMinThreshold;
+        return numberOfRenewsPerMinThreshold > 0 && getNumOfRenewsInLastMin() > numberOfRenewsPerMinThreshold;// 如果eureka server 接收到的心跳数量大于心跳阈值则返回 true
     }
 
     /**

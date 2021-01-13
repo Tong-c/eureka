@@ -585,6 +585,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
         evict(0l);
     }
 
+    // eureka server 会自动检查服务实例的状态
     public void evict(long additionalLeaseMs) {
         logger.debug("Running the evict task");
 
@@ -611,7 +612,10 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
 
         // To compensate for GC pauses or drifting local time, we need to use current registry size as a base for
         // triggering self-preservation. Without that we would wipe out full registry.
-        int registrySize = (int) getLocalRegistrySize();
+        int registrySize = (int) getLocalRegistrySize();// 从注册表中获取服务实例数量
+        // eureka server 不会一次将所有判断为过期的服务实例摘除，
+        // 而是根据当前注册表中服务实例数量 * 0.85 计算出保留的服务实例数量，分批摘除
+        // 余下的 15% 将会与 上面判断过期的服务实例数量做比较，然后取小的数量去摘除
         int registrySizeThreshold = (int) (registrySize * serverConfig.getRenewalPercentThreshold());
         int evictionLimit = registrySize - registrySizeThreshold;
 
@@ -620,7 +624,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             logger.info("Evicting {} items (expired={}, evictionLimit={})", toEvict, expiredLeases.size(), evictionLimit);
 
             Random random = new Random(System.currentTimeMillis());
-            for (int i = 0; i < toEvict; i++) {
+            for (int i = 0; i < toEvict; i++) {//随机过期服务实例
                 // Pick a random item (Knuth shuffle algorithm)
                 int next = i + random.nextInt(expiredLeases.size() - i);
                 Collections.swap(expiredLeases, i, next);
@@ -1247,7 +1251,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
         @Override
         public void run() {
             try {
-                long compensationTimeMs = getCompensationTimeMs();
+                long compensationTimeMs = getCompensationTimeMs();// 获取补偿时间
                 logger.info("Running the evict task with compensationTime {}ms", compensationTimeMs);
                 evict(compensationTimeMs);
             } catch (Throwable e) {
