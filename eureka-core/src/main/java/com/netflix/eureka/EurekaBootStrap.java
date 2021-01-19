@@ -216,11 +216,16 @@ public class EurekaBootStrap implements ServletContextListener {
 
         EurekaServerContextHolder.initialize(serverContext);
 
-        serverContext.initialize();// 非常关键的方法，将注册表信息全量加载到缓存中，也就是缓存初始化的入口方法，后续就会持续维护缓存，但不会从注册表中加载全量数据
+        // 非常关键的方法，将注册表信息全量加载到缓存中，也就是缓存初始化的入口方法，
+        // 后续就会持续维护缓存，但不会从注册表中加载全量数据
+        serverContext.initialize();
         logger.info("Initialized server context");
 
+        // eureka server 集群信息同步
         // Copy registry from neighboring eureka node
         int registryCount = registry.syncUp();
+
+        // eureka server 故障感知以及服务实例自动摘除
         registry.openForTraffic(applicationInfoManager, registryCount);
 
         // Register all monitoring statistics.

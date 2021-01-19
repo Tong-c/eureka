@@ -86,7 +86,7 @@ public abstract class AbstractJersey2EurekaHttpClient implements EurekaHttpClien
         String urlPath = "apps/" + info.getAppName();
         Response response = null;
         try {
-            Builder resourceBuilder = jerseyClient.target(serviceUrl).path(urlPath).request();// 非常直观的 rest 请求发送
+            Builder resourceBuilder = jerseyClient.target(serviceUrl).path(urlPath).request();// 非常直观的 rest 请求发送，post
             addExtraProperties(resourceBuilder);
             addExtraHeaders(resourceBuilder);
             response = resourceBuilder

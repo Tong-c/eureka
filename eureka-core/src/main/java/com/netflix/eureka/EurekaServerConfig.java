@@ -124,6 +124,7 @@ public interface EurekaServerConfig {
      * @return value between 0 and 1 indicating the percentage. For example,
      *         <code>85%</code> will be specified as <code>0.85</code>.
      */
+    // 如果心跳数量低于阈值，自我保护开启下，将会停止摘除实例，默认 0.85
     double getRenewalPercentThreshold();
 
     /**

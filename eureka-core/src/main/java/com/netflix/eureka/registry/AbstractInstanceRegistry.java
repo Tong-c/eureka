@@ -226,7 +226,9 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
                         // Since the client wants to cancel it, reduce the threshold
                         // (1
                         // for 30 seconds, 2 for a minute)
+                        // 服务注册的时候，会更新每分钟期待的心跳数量以及每分钟心跳阈值
                         this.expectedNumberOfRenewsPerMin = this.expectedNumberOfRenewsPerMin + 2;
+                        // numberOfRenewsPerMinThreshold (每分钟心跳阈值数量) 等于 每分钟期待心跳数量 乘以 0.85
                         this.numberOfRenewsPerMinThreshold =
                                 (int) (this.expectedNumberOfRenewsPerMin * serverConfig.getRenewalPercentThreshold());
                     }
@@ -589,6 +591,10 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     public void evict(long additionalLeaseMs) {
         logger.debug("Running the evict task");
 
+        // 非常关键的判断
+        // 如果自我保护未开启，eureka server 将会自动摘除服务实例，
+        // 但是自我保护开启下，上一分钟心跳数量 不大于 期待的心跳阈值时，eureka server 将不会自动摘除服务实例
+        // 期待的心跳阈值，每 15 分钟更新一次，其值等于 服务实例数量 * 2 * 0.85
         if (!isLeaseExpirationEnabled()) {
             logger.debug("DS: lease expiration is currently disabled.");
             return;
