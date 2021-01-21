@@ -337,16 +337,20 @@ public class ResponseCacheImpl implements ResponseCache {
     /**
      * Get the payload in both compressed and uncompressed form.
      */
+    // 这里头有两个 cache 对象，readOnlyCacheMap 和 readWriteCacheMap
     @VisibleForTesting
-    Value getValue(final Key key, boolean useReadOnlyCache) {// 这里头有两个 cache 对象，readOnlyCacheMap 和 readWriteCacheMap
+    Value getValue(final Key key, boolean useReadOnlyCache) {
         Value payload = null;
         try {
             if (useReadOnlyCache) {
-                final Value currentPayload = readOnlyCacheMap.get(key);// 先从 readOnlyCacheMap 缓存中读取
+                // 先从 readOnlyCacheMap 缓存中读取
+                final Value currentPayload = readOnlyCacheMap.get(key);
                 if (currentPayload != null) {
                     payload = currentPayload;
                 } else {
-                    payload = readWriteCacheMap.get(key);// readOnlyCacheMap 缓存为空时，继续到 readWriteCacheMap 缓存中读取，在这里如果 readWriteCacheMap 缓存为空，不会直接去注册表中重新抓取信息放入缓存，缓存实例初始化的时候会将注册表信息放入缓存中，不在这里维护
+                    // readOnlyCacheMap 缓存为空时，继续到 readWriteCacheMap 缓存中读取，在这里如果 readWriteCacheMap 缓存为空，
+                    // 不会直接去注册表中重新抓取信息放入缓存，缓存实例初始化的时候会将注册表信息放入缓存中，不在这里维护
+                    payload = readWriteCacheMap.get(key);
                     readOnlyCacheMap.put(key, payload);
                 }
             } else {

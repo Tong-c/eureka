@@ -100,6 +100,7 @@ class AcceptorExecutor<ID, T> {
         this.trafficShaper = new TrafficShaper(congestionRetryDelayMs, networkFailureRetryMs);
 
         ThreadGroup threadGroup = new ThreadGroup("eurekaTaskExecutors");
+        // AcceptorExecutor 实例化的时候，会启动线程，该线程会处理集群同步任务
         this.acceptorThread = new Thread(threadGroup, new AcceptorRunner(), "TaskAcceptor-" + id);
         this.acceptorThread.setDaemon(true);
         this.acceptorThread.start();

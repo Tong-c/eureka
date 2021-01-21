@@ -43,7 +43,6 @@ import org.slf4j.LoggerFactory;
  * <p>
  *
  * @author Karthik Ranganathan, Greg Kim
- *
  */
 public class PeerEurekaNode {
 
@@ -101,6 +100,7 @@ public class PeerEurekaNode {
 
         String batcherName = getBatcherName();
         ReplicationTaskProcessor taskProcessor = new ReplicationTaskProcessor(targetHost, replicationClient);
+        // 集群间服务实例的同步通过 batchingDispatcher 处理
         this.batchingDispatcher = TaskDispatchers.createBatchingTaskDispatcher(
                 batcherName,
                 config.getMaxElementsInPeerReplicationPool(),
@@ -126,13 +126,13 @@ public class PeerEurekaNode {
      * Sends the registration information of {@link InstanceInfo} receiving by
      * this node to the peer node represented by this class.
      *
-     * @param info
-     *            the instance information {@link InstanceInfo} of any instance
-     *            that is send to this instance.
+     * @param info the instance information {@link InstanceInfo} of any instance
+     *             that is send to this instance.
      * @throws Exception
      */
     public void register(final InstanceInfo info) throws Exception {
         long expiryTime = System.currentTimeMillis() + getLeaseRenewalOf(info);
+        // process 方法的处理，封装 TaskHolder 对象，并提交到一个队列中
         batchingDispatcher.process(
                 taskId("register", info),
                 new InstanceReplicationTask(targetHost, Action.Register, info, null, true) {
@@ -148,10 +148,8 @@ public class PeerEurekaNode {
      * Send the cancellation information of an instance to the node represented
      * by this class.
      *
-     * @param appName
-     *            the application name of the instance.
-     * @param id
-     *            the unique identifier of the instance.
+     * @param appName the application name of the instance.
+     * @param id      the unique identifier of the instance.
      * @throws Exception
      */
     public void cancel(final String appName, final String id) throws Exception {
@@ -181,14 +179,10 @@ public class PeerEurekaNode {
      * this class. If the instance does not exist the node, the instance
      * registration information is sent again to the peer node.
      *
-     * @param appName
-     *            the application name of the instance.
-     * @param id
-     *            the unique identifier of the instance.
-     * @param info
-     *            the instance info {@link InstanceInfo} of the instance.
-     * @param overriddenStatus
-     *            the overridden status information if any of the instance.
+     * @param appName          the application name of the instance.
+     * @param id               the unique identifier of the instance.
+     * @param info             the instance info {@link InstanceInfo} of the instance.
+     * @param overriddenStatus the overridden status information if any of the instance.
      * @throws Throwable
      */
     public void heartbeat(final String appName, final String id,
@@ -235,10 +229,8 @@ public class PeerEurekaNode {
      * ASG information is used for determining if the instance should be
      * registered as {@link InstanceStatus#DOWN} or {@link InstanceStatus#UP}.
      *
-     * @param asgName
-     *            the asg name if any of this instance.
-     * @param newStatus
-     *            the new status of the ASG.
+     * @param asgName   the asg name if any of this instance.
+     * @param newStatus the new status of the ASG.
      */
     public void statusUpdate(final String asgName, final ASGStatus newStatus) {
         long expiryTime = System.currentTimeMillis() + maxProcessingDelayMs;
@@ -254,17 +246,12 @@ public class PeerEurekaNode {
     }
 
     /**
-     *
      * Send the status update of the instance.
      *
-     * @param appName
-     *            the application name of the instance.
-     * @param id
-     *            the unique identifier of the instance.
-     * @param newStatus
-     *            the new status of the instance.
-     * @param info
-     *            the instance information of the instance.
+     * @param appName   the application name of the instance.
+     * @param id        the unique identifier of the instance.
+     * @param newStatus the new status of the instance.
+     * @param info      the instance information of the instance.
      */
     public void statusUpdate(final String appName, final String id,
                              final InstanceStatus newStatus, final InstanceInfo info) {
@@ -284,12 +271,9 @@ public class PeerEurekaNode {
     /**
      * Delete instance status override.
      *
-     * @param appName
-     *            the application name of the instance.
-     * @param id
-     *            the unique identifier of the instance.
-     * @param info
-     *            the instance information of the instance.
+     * @param appName the application name of the instance.
+     * @param id      the unique identifier of the instance.
+     * @param info    the instance information of the instance.
      */
     public void deleteStatusOverride(final String appName, final String id, final InstanceInfo info) {
         long expiryTime = System.currentTimeMillis() + maxProcessingDelayMs;

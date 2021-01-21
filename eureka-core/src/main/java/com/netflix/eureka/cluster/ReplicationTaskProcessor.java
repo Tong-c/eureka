@@ -68,6 +68,7 @@ class ReplicationTaskProcessor implements TaskProcessor<ReplicationTask> {
     public ProcessingResult process(List<ReplicationTask> tasks) {
         ReplicationList list = createReplicationListOf(tasks);
         try {
+            // 集群间同步，会先将带同步的信息添加到队列中，然后批量处理，发送请求
             EurekaHttpResponse<ReplicationListResponse> response = replicationClient.submitBatchUpdates(list);
             int statusCode = response.getStatusCode();
             if (!isSuccess(statusCode)) {

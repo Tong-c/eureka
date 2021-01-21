@@ -183,8 +183,9 @@ public class ApplicationsResource {
      * @return response containing the delta information of the
      * {@link AbstractInstanceRegistry}.
      */
-    @Path("delta")// 抓取增量注册表信息
+    @Path("delta")
     @GET
+    // 抓取增量注册表信息
     public Response getContainerDifferential(
             @PathParam("version") String version,
             @HeaderParam(HEADER_ACCEPT) String acceptHeader,

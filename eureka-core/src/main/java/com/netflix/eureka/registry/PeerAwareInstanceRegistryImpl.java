@@ -410,6 +410,7 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
             leaseDuration = info.getLeaseInfo().getDurationInSecs();
         }
         super.register(info, leaseDuration, isReplication);
+        // eureka server 接收到服务注册请求后，会将服务实例信息同步到集群中其他的 eureka server 中
         replicateToPeers(Action.Register, info.getAppName(), info.getId(), info, null, isReplication);
     }
 
@@ -647,6 +648,7 @@ public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry impl
      * Replicates all instance changes to peer eureka nodes except for
      * replication traffic to this node.
      */
+    // 就是这里了，服务实例的下线，心跳，注册，状态变更都会在集群中进行同步
     private void replicateInstanceActionsToPeers(Action action, String appName,
                                                  String id, InstanceInfo info, InstanceStatus newStatus,
                                                  PeerEurekaNode node) {

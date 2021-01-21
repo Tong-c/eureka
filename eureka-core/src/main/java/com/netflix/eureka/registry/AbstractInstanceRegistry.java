@@ -618,10 +618,11 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
 
         // To compensate for GC pauses or drifting local time, we need to use current registry size as a base for
         // triggering self-preservation. Without that we would wipe out full registry.
-        int registrySize = (int) getLocalRegistrySize();// 从注册表中获取服务实例数量
+        int registrySize = (int) getLocalRegistrySize();
+        // 从注册表中获取服务实例数量
         // eureka server 不会一次将所有判断为过期的服务实例摘除，
         // 而是根据当前注册表中服务实例数量 * 0.85 计算出保留的服务实例数量，分批摘除
-        // 余下的 15% 将会与 上面判断过期的服务实例数量做比较，然后取小的数量去摘除
+        // 余下的 15% 将会与上面判断过期的服务实例数量做比较，然后取小的数量去摘除
         int registrySizeThreshold = (int) (registrySize * serverConfig.getRenewalPercentThreshold());
         int evictionLimit = registrySize - registrySizeThreshold;
 
@@ -924,6 +925,10 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             }
 
             Applications allApps = getApplications(!disableTransparentFallback);
+            // 这段代码解释了 eureka client 拉取增量注册表之后，进行 hash 比较的具体逻辑
+            // eureka client 拉取增量注册表的时候，eureka server 的响应值会携带 eureka server 全量注册表的 hash
+            // eureka client 将增量注册表信息与其本地注册表合并之后，会在 eureka client 计算一个 hash，
+            // 之后再与 eureka server 端返回的 hash 做比较，如果不同，则再次拉取全量注册表
             apps.setAppsHashCode(allApps.getReconcileHashCode());
             return apps;
         } finally {

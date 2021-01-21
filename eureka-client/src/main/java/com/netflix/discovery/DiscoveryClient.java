@@ -412,7 +412,8 @@ public class DiscoveryClient implements EurekaClient {
         }
 
         // shouldFetchRegistry 属于 eurkea.client.properties 的属性，配置文件会加载到 EureClientConfig 对象中
-        if (clientConfig.shouldFetchRegistry() && !fetchRegistry(false)) {// 这里有个方法被忽略了，原来以为也是读取下配置完事，其实不是，这里是直接抓取注册表
+        // 这里 fetchRegistry 方法被忽略了，原来以为也是读取下配置完事，其实不是，这里是直接抓取注册表
+        if (clientConfig.shouldFetchRegistry() && !fetchRegistry(false)) {
             fetchRegistryFromBackup();
         }
 
@@ -924,7 +925,7 @@ public class DiscoveryClient implements EurekaClient {
                     || (!Strings.isNullOrEmpty(clientConfig.getRegistryRefreshSingleVipAddress()))
                     || forceFullRegistryFetch
                     || (applications == null)
-                    || (applications.getRegisteredApplications().size() == 0)
+                    || (applications.getRegisteredApplications().size() == 0)// eureka client 初始化构造的 Applications 是个空队列，满足 size == 0
                     || (applications.getVersion() == -1)) //Client application does not have latest library supporting delta
             {
                 logger.info("Disable delta property : {}", clientConfig.shouldDisableDelta());
@@ -1057,7 +1058,7 @@ public class DiscoveryClient implements EurekaClient {
         if (httpResponse.getStatusCode() == Status.OK.getStatusCode()) {
             delta = httpResponse.getEntity();
         }
-
+        // 如果增量注册表的数据为空，则会重新抓取全量注册表
         if (delta == null) {
             logger.warn("The server does not allow the delta revision to be applied because it is not safe. "
                     + "Hence got the full registry.");
@@ -1067,6 +1068,7 @@ public class DiscoveryClient implements EurekaClient {
             String reconcileHashCode = "";
             if (fetchRegistryUpdateLock.tryLock()) {
                 try {
+                    // 合并增量注册表数据到本地缓存
                     updateDelta(delta);
                     reconcileHashCode = getReconcileHashCode(applications);
                 } finally {
@@ -1185,6 +1187,7 @@ public class DiscoveryClient implements EurekaClient {
                 }
 
                 ++deltaCount;
+                // 如果增量注册表中，包含新注册的服务实例，则会在本地缓存中添加该实例
                 if (ActionType.ADDED.equals(instance.getActionType())) {
                     Application existingApp = applications.getRegisteredApplications(instance.getAppName());
                     if (existingApp == null) {
@@ -1200,7 +1203,7 @@ public class DiscoveryClient implements EurekaClient {
                     logger.debug("Modified instance {} to the existing apps ", instance.getId());
 
                     applications.getRegisteredApplications(instance.getAppName()).addInstance(instance);
-
+                // 如果增量注册表中，包含摘除的服务实例，则会在本地缓存中删除该实例
                 } else if (ActionType.DELETED.equals(instance.getActionType())) {
                     Application existingApp = applications.getRegisteredApplications(instance.getAppName());
                     if (existingApp == null) {
